@@ -372,7 +372,7 @@ type AnchorInfo struct {
 	// The txid of the above transaction.
 	AnchorTxid string `protobuf:"bytes,2,opt,name=anchor_txid,json=anchorTxid,proto3" json:"anchor_txid,omitempty"`
 	// The block hash the contains the anchor transaction above.
-	AnchorBlockHash []byte `protobuf:"bytes,3,opt,name=anchor_block_hash,json=anchorBlockHash,proto3" json:"anchor_block_hash,omitempty"`
+	AnchorBlockHash string `protobuf:"bytes,3,opt,name=anchor_block_hash,json=anchorBlockHash,proto3" json:"anchor_block_hash,omitempty"`
 	// The outpoint (txid:vout) that stores the Taproot Asset commitment.
 	AnchorOutpoint string `protobuf:"bytes,4,opt,name=anchor_outpoint,json=anchorOutpoint,proto3" json:"anchor_outpoint,omitempty"`
 	// The raw internal key that was used to create the anchor Taproot output key.
@@ -433,11 +433,11 @@ func (x *AnchorInfo) GetAnchorTxid() string {
 	return ""
 }
 
-func (x *AnchorInfo) GetAnchorBlockHash() []byte {
+func (x *AnchorInfo) GetAnchorBlockHash() string {
 	if x != nil {
 		return x.AnchorBlockHash
 	}
-	return nil
+	return ""
 }
 
 func (x *AnchorInfo) GetAnchorOutpoint() string {
@@ -2895,16 +2895,34 @@ func (x *ProofFile) GetGenesisPoint() string {
 	return ""
 }
 
-type ProofVerifyResponse struct {
+type DecodedProof struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Valid bool `protobuf:"varint,1,opt,name=valid,proto3" json:"valid,omitempty"`
+	// The index depth of the decoded proof, with 0 being the latest proof.
+	ProofAtDepth int64 `protobuf:"varint,1,opt,name=proof_at_depth,json=proofAtDepth,proto3" json:"proof_at_depth,omitempty"`
+	// The total number of proofs contained in the raw proof.
+	NumberOfProofs int64 `protobuf:"varint,2,opt,name=number_of_proofs,json=numberOfProofs,proto3" json:"number_of_proofs,omitempty"`
+	// The asset referenced in the proof.
+	Asset *Asset `protobuf:"bytes,3,opt,name=asset,proto3" json:"asset,omitempty"`
+	// The merkle proof for AnchorTx used to prove its
+	// inclusion within BlockHeader.
+	TxMerkleProof []byte `protobuf:"bytes,4,opt,name=tx_merkle_proof,json=txMerkleProof,proto3" json:"tx_merkle_proof,omitempty"`
+	// The TaprootProof proving the new inclusion of the
+	// resulting asset within AnchorTx.
+	InclusionProof []byte `protobuf:"bytes,5,opt,name=inclusion_proof,json=inclusionProof,proto3" json:"inclusion_proof,omitempty"`
+	// The set of TaprootProofs proving the exclusion of
+	// the resulting asset from all other Taproot outputs within AnchorTx.
+	ExclusionProofs [][]byte `protobuf:"bytes,6,rep,name=exclusion_proofs,json=exclusionProofs,proto3" json:"exclusion_proofs,omitempty"`
+	// An optional TaprootProof needed if this asset is
+	// the result of a split. SplitRootProof proves inclusion of the root
+	// asset of the split.
+	SplitRootProof []byte `protobuf:"bytes,7,opt,name=split_root_proof,json=splitRootProof,proto3" json:"split_root_proof,omitempty"`
 }
 
-func (x *ProofVerifyResponse) Reset() {
-	*x = ProofVerifyResponse{}
+func (x *DecodedProof) Reset() {
+	*x = DecodedProof{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_taprootassets_proto_msgTypes[39]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2912,13 +2930,13 @@ func (x *ProofVerifyResponse) Reset() {
 	}
 }
 
-func (x *ProofVerifyResponse) String() string {
+func (x *DecodedProof) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ProofVerifyResponse) ProtoMessage() {}
+func (*DecodedProof) ProtoMessage() {}
 
-func (x *ProofVerifyResponse) ProtoReflect() protoreflect.Message {
+func (x *DecodedProof) ProtoReflect() protoreflect.Message {
 	mi := &file_taprootassets_proto_msgTypes[39]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2930,16 +2948,226 @@ func (x *ProofVerifyResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ProofVerifyResponse.ProtoReflect.Descriptor instead.
-func (*ProofVerifyResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use DecodedProof.ProtoReflect.Descriptor instead.
+func (*DecodedProof) Descriptor() ([]byte, []int) {
 	return file_taprootassets_proto_rawDescGZIP(), []int{39}
 }
 
-func (x *ProofVerifyResponse) GetValid() bool {
+func (x *DecodedProof) GetProofAtDepth() int64 {
+	if x != nil {
+		return x.ProofAtDepth
+	}
+	return 0
+}
+
+func (x *DecodedProof) GetNumberOfProofs() int64 {
+	if x != nil {
+		return x.NumberOfProofs
+	}
+	return 0
+}
+
+func (x *DecodedProof) GetAsset() *Asset {
+	if x != nil {
+		return x.Asset
+	}
+	return nil
+}
+
+func (x *DecodedProof) GetTxMerkleProof() []byte {
+	if x != nil {
+		return x.TxMerkleProof
+	}
+	return nil
+}
+
+func (x *DecodedProof) GetInclusionProof() []byte {
+	if x != nil {
+		return x.InclusionProof
+	}
+	return nil
+}
+
+func (x *DecodedProof) GetExclusionProofs() [][]byte {
+	if x != nil {
+		return x.ExclusionProofs
+	}
+	return nil
+}
+
+func (x *DecodedProof) GetSplitRootProof() []byte {
+	if x != nil {
+		return x.SplitRootProof
+	}
+	return nil
+}
+
+type VerifyProofResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Valid        bool          `protobuf:"varint,1,opt,name=valid,proto3" json:"valid,omitempty"`
+	DecodedProof *DecodedProof `protobuf:"bytes,2,opt,name=decoded_proof,json=decodedProof,proto3" json:"decoded_proof,omitempty"`
+}
+
+func (x *VerifyProofResponse) Reset() {
+	*x = VerifyProofResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_taprootassets_proto_msgTypes[40]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *VerifyProofResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifyProofResponse) ProtoMessage() {}
+
+func (x *VerifyProofResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_taprootassets_proto_msgTypes[40]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifyProofResponse.ProtoReflect.Descriptor instead.
+func (*VerifyProofResponse) Descriptor() ([]byte, []int) {
+	return file_taprootassets_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *VerifyProofResponse) GetValid() bool {
 	if x != nil {
 		return x.Valid
 	}
 	return false
+}
+
+func (x *VerifyProofResponse) GetDecodedProof() *DecodedProof {
+	if x != nil {
+		return x.DecodedProof
+	}
+	return nil
+}
+
+type DecodeProofRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The raw proof in bytes to decode, which may contain multiple proofs.
+	RawProof []byte `protobuf:"bytes,1,opt,name=raw_proof,json=rawProof,proto3" json:"raw_proof,omitempty"`
+	// The index depth of the decoded proof, with 0 being the latest proof.
+	ProofAtDepth int64 `protobuf:"varint,2,opt,name=proof_at_depth,json=proofAtDepth,proto3" json:"proof_at_depth,omitempty"`
+	// An option to include previous witnesses in decoding.
+	WithPrevWitnesses bool `protobuf:"varint,3,opt,name=with_prev_witnesses,json=withPrevWitnesses,proto3" json:"with_prev_witnesses,omitempty"`
+}
+
+func (x *DecodeProofRequest) Reset() {
+	*x = DecodeProofRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_taprootassets_proto_msgTypes[41]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DecodeProofRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DecodeProofRequest) ProtoMessage() {}
+
+func (x *DecodeProofRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_taprootassets_proto_msgTypes[41]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DecodeProofRequest.ProtoReflect.Descriptor instead.
+func (*DecodeProofRequest) Descriptor() ([]byte, []int) {
+	return file_taprootassets_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *DecodeProofRequest) GetRawProof() []byte {
+	if x != nil {
+		return x.RawProof
+	}
+	return nil
+}
+
+func (x *DecodeProofRequest) GetProofAtDepth() int64 {
+	if x != nil {
+		return x.ProofAtDepth
+	}
+	return 0
+}
+
+func (x *DecodeProofRequest) GetWithPrevWitnesses() bool {
+	if x != nil {
+		return x.WithPrevWitnesses
+	}
+	return false
+}
+
+type DecodeProofResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	DecodedProof *DecodedProof `protobuf:"bytes,1,opt,name=decoded_proof,json=decodedProof,proto3" json:"decoded_proof,omitempty"`
+}
+
+func (x *DecodeProofResponse) Reset() {
+	*x = DecodeProofResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_taprootassets_proto_msgTypes[42]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DecodeProofResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DecodeProofResponse) ProtoMessage() {}
+
+func (x *DecodeProofResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_taprootassets_proto_msgTypes[42]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DecodeProofResponse.ProtoReflect.Descriptor instead.
+func (*DecodeProofResponse) Descriptor() ([]byte, []int) {
+	return file_taprootassets_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *DecodeProofResponse) GetDecodedProof() *DecodedProof {
+	if x != nil {
+		return x.DecodedProof
+	}
+	return nil
 }
 
 type ExportProofRequest struct {
@@ -2954,7 +3182,7 @@ type ExportProofRequest struct {
 func (x *ExportProofRequest) Reset() {
 	*x = ExportProofRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_taprootassets_proto_msgTypes[40]
+		mi := &file_taprootassets_proto_msgTypes[43]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2967,7 +3195,7 @@ func (x *ExportProofRequest) String() string {
 func (*ExportProofRequest) ProtoMessage() {}
 
 func (x *ExportProofRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taprootassets_proto_msgTypes[40]
+	mi := &file_taprootassets_proto_msgTypes[43]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2980,7 +3208,7 @@ func (x *ExportProofRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExportProofRequest.ProtoReflect.Descriptor instead.
 func (*ExportProofRequest) Descriptor() ([]byte, []int) {
-	return file_taprootassets_proto_rawDescGZIP(), []int{40}
+	return file_taprootassets_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *ExportProofRequest) GetAssetId() []byte {
@@ -3009,7 +3237,7 @@ type ImportProofRequest struct {
 func (x *ImportProofRequest) Reset() {
 	*x = ImportProofRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_taprootassets_proto_msgTypes[41]
+		mi := &file_taprootassets_proto_msgTypes[44]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3022,7 +3250,7 @@ func (x *ImportProofRequest) String() string {
 func (*ImportProofRequest) ProtoMessage() {}
 
 func (x *ImportProofRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taprootassets_proto_msgTypes[41]
+	mi := &file_taprootassets_proto_msgTypes[44]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3035,7 +3263,7 @@ func (x *ImportProofRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportProofRequest.ProtoReflect.Descriptor instead.
 func (*ImportProofRequest) Descriptor() ([]byte, []int) {
-	return file_taprootassets_proto_rawDescGZIP(), []int{41}
+	return file_taprootassets_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *ImportProofRequest) GetProofFile() []byte {
@@ -3061,7 +3289,7 @@ type ImportProofResponse struct {
 func (x *ImportProofResponse) Reset() {
 	*x = ImportProofResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_taprootassets_proto_msgTypes[42]
+		mi := &file_taprootassets_proto_msgTypes[45]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3074,7 +3302,7 @@ func (x *ImportProofResponse) String() string {
 func (*ImportProofResponse) ProtoMessage() {}
 
 func (x *ImportProofResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taprootassets_proto_msgTypes[42]
+	mi := &file_taprootassets_proto_msgTypes[45]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3087,7 +3315,7 @@ func (x *ImportProofResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportProofResponse.ProtoReflect.Descriptor instead.
 func (*ImportProofResponse) Descriptor() ([]byte, []int) {
-	return file_taprootassets_proto_rawDescGZIP(), []int{42}
+	return file_taprootassets_proto_rawDescGZIP(), []int{45}
 }
 
 type AddrEvent struct {
@@ -3120,7 +3348,7 @@ type AddrEvent struct {
 func (x *AddrEvent) Reset() {
 	*x = AddrEvent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_taprootassets_proto_msgTypes[43]
+		mi := &file_taprootassets_proto_msgTypes[46]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3133,7 +3361,7 @@ func (x *AddrEvent) String() string {
 func (*AddrEvent) ProtoMessage() {}
 
 func (x *AddrEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_taprootassets_proto_msgTypes[43]
+	mi := &file_taprootassets_proto_msgTypes[46]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3146,7 +3374,7 @@ func (x *AddrEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddrEvent.ProtoReflect.Descriptor instead.
 func (*AddrEvent) Descriptor() ([]byte, []int) {
-	return file_taprootassets_proto_rawDescGZIP(), []int{43}
+	return file_taprootassets_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *AddrEvent) GetCreationTimeUnixSeconds() uint64 {
@@ -3219,7 +3447,7 @@ type AddrReceivesRequest struct {
 func (x *AddrReceivesRequest) Reset() {
 	*x = AddrReceivesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_taprootassets_proto_msgTypes[44]
+		mi := &file_taprootassets_proto_msgTypes[47]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3232,7 +3460,7 @@ func (x *AddrReceivesRequest) String() string {
 func (*AddrReceivesRequest) ProtoMessage() {}
 
 func (x *AddrReceivesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taprootassets_proto_msgTypes[44]
+	mi := &file_taprootassets_proto_msgTypes[47]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3245,7 +3473,7 @@ func (x *AddrReceivesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddrReceivesRequest.ProtoReflect.Descriptor instead.
 func (*AddrReceivesRequest) Descriptor() ([]byte, []int) {
-	return file_taprootassets_proto_rawDescGZIP(), []int{44}
+	return file_taprootassets_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *AddrReceivesRequest) GetFilterAddr() string {
@@ -3274,7 +3502,7 @@ type AddrReceivesResponse struct {
 func (x *AddrReceivesResponse) Reset() {
 	*x = AddrReceivesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_taprootassets_proto_msgTypes[45]
+		mi := &file_taprootassets_proto_msgTypes[48]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3287,7 +3515,7 @@ func (x *AddrReceivesResponse) String() string {
 func (*AddrReceivesResponse) ProtoMessage() {}
 
 func (x *AddrReceivesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taprootassets_proto_msgTypes[45]
+	mi := &file_taprootassets_proto_msgTypes[48]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3300,7 +3528,7 @@ func (x *AddrReceivesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddrReceivesResponse.ProtoReflect.Descriptor instead.
 func (*AddrReceivesResponse) Descriptor() ([]byte, []int) {
-	return file_taprootassets_proto_rawDescGZIP(), []int{45}
+	return file_taprootassets_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *AddrReceivesResponse) GetEvents() []*AddrEvent {
@@ -3321,7 +3549,7 @@ type SendAssetRequest struct {
 func (x *SendAssetRequest) Reset() {
 	*x = SendAssetRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_taprootassets_proto_msgTypes[46]
+		mi := &file_taprootassets_proto_msgTypes[49]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3334,7 +3562,7 @@ func (x *SendAssetRequest) String() string {
 func (*SendAssetRequest) ProtoMessage() {}
 
 func (x *SendAssetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taprootassets_proto_msgTypes[46]
+	mi := &file_taprootassets_proto_msgTypes[49]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3347,7 +3575,7 @@ func (x *SendAssetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendAssetRequest.ProtoReflect.Descriptor instead.
 func (*SendAssetRequest) Descriptor() ([]byte, []int) {
-	return file_taprootassets_proto_rawDescGZIP(), []int{46}
+	return file_taprootassets_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *SendAssetRequest) GetTapAddrs() []string {
@@ -3371,7 +3599,7 @@ type PrevInputAsset struct {
 func (x *PrevInputAsset) Reset() {
 	*x = PrevInputAsset{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_taprootassets_proto_msgTypes[47]
+		mi := &file_taprootassets_proto_msgTypes[50]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3384,7 +3612,7 @@ func (x *PrevInputAsset) String() string {
 func (*PrevInputAsset) ProtoMessage() {}
 
 func (x *PrevInputAsset) ProtoReflect() protoreflect.Message {
-	mi := &file_taprootassets_proto_msgTypes[47]
+	mi := &file_taprootassets_proto_msgTypes[50]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3397,7 +3625,7 @@ func (x *PrevInputAsset) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PrevInputAsset.ProtoReflect.Descriptor instead.
 func (*PrevInputAsset) Descriptor() ([]byte, []int) {
-	return file_taprootassets_proto_rawDescGZIP(), []int{47}
+	return file_taprootassets_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *PrevInputAsset) GetAnchorPoint() string {
@@ -3439,7 +3667,7 @@ type SendAssetResponse struct {
 func (x *SendAssetResponse) Reset() {
 	*x = SendAssetResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_taprootassets_proto_msgTypes[48]
+		mi := &file_taprootassets_proto_msgTypes[51]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3452,7 +3680,7 @@ func (x *SendAssetResponse) String() string {
 func (*SendAssetResponse) ProtoMessage() {}
 
 func (x *SendAssetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taprootassets_proto_msgTypes[48]
+	mi := &file_taprootassets_proto_msgTypes[51]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3465,7 +3693,7 @@ func (x *SendAssetResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendAssetResponse.ProtoReflect.Descriptor instead.
 func (*SendAssetResponse) Descriptor() ([]byte, []int) {
-	return file_taprootassets_proto_rawDescGZIP(), []int{48}
+	return file_taprootassets_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *SendAssetResponse) GetTransfer() *AssetTransfer {
@@ -3929,7 +4157,7 @@ var file_taprootassets_proto_rawDesc = []byte{
 	0x0a, 0x0b, 0x61, 0x6e, 0x63, 0x68, 0x6f, 0x72, 0x5f, 0x74, 0x78, 0x69, 0x64, 0x18, 0x02, 0x20,
 	0x01, 0x28, 0x09, 0x52, 0x0a, 0x61, 0x6e, 0x63, 0x68, 0x6f, 0x72, 0x54, 0x78, 0x69, 0x64, 0x12,
 	0x2a, 0x0a, 0x11, 0x61, 0x6e, 0x63, 0x68, 0x6f, 0x72, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f,
-	0x68, 0x61, 0x73, 0x68, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0f, 0x61, 0x6e, 0x63, 0x68,
+	0x68, 0x61, 0x73, 0x68, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x61, 0x6e, 0x63, 0x68,
 	0x6f, 0x72, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x12, 0x27, 0x0a, 0x0f, 0x61,
 	0x6e, 0x63, 0x68, 0x6f, 0x72, 0x5f, 0x6f, 0x75, 0x74, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x18, 0x04,
 	0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x61, 0x6e, 0x63, 0x68, 0x6f, 0x72, 0x4f, 0x75, 0x74, 0x70,
@@ -4578,7 +4806,7 @@ var file_taprootassets_proto_depIdxs = []int32{
 	8,  // 3: taprpc.Asset.asset_group:type_name -> taprpc.AssetGroup
 	6,  // 4: taprpc.Asset.chain_anchor:type_name -> taprpc.AnchorInfo
 	10, // 5: taprpc.Asset.prev_witnesses:type_name -> taprpc.PrevWitness
-	51, // 6: taprpc.PrevWitness.prev_id:type_name -> taprpc.PrevInputAsset
+	54, // 6: taprpc.PrevWitness.prev_id:type_name -> taprpc.PrevInputAsset
 	11, // 7: taprpc.PrevWitness.split_commitment:type_name -> taprpc.SplitCommitment
 	9,  // 8: taprpc.SplitCommitment.root_asset:type_name -> taprpc.Asset
 	9,  // 9: taprpc.ListAssetResponse.assets:type_name -> taprpc.Asset
@@ -5131,7 +5359,7 @@ func file_taprootassets_proto_init() {
 			}
 		}
 		file_taprootassets_proto_msgTypes[39].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ProofVerifyResponse); i {
+			switch v := v.(*DecodedProof); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5143,7 +5371,7 @@ func file_taprootassets_proto_init() {
 			}
 		}
 		file_taprootassets_proto_msgTypes[40].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExportProofRequest); i {
+			switch v := v.(*VerifyProofResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5155,7 +5383,7 @@ func file_taprootassets_proto_init() {
 			}
 		}
 		file_taprootassets_proto_msgTypes[41].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ImportProofRequest); i {
+			switch v := v.(*DecodeProofRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5167,7 +5395,7 @@ func file_taprootassets_proto_init() {
 			}
 		}
 		file_taprootassets_proto_msgTypes[42].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ImportProofResponse); i {
+			switch v := v.(*DecodeProofResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5179,7 +5407,7 @@ func file_taprootassets_proto_init() {
 			}
 		}
 		file_taprootassets_proto_msgTypes[43].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AddrEvent); i {
+			switch v := v.(*ExportProofRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5191,7 +5419,7 @@ func file_taprootassets_proto_init() {
 			}
 		}
 		file_taprootassets_proto_msgTypes[44].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AddrReceivesRequest); i {
+			switch v := v.(*ImportProofRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5203,7 +5431,7 @@ func file_taprootassets_proto_init() {
 			}
 		}
 		file_taprootassets_proto_msgTypes[45].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AddrReceivesResponse); i {
+			switch v := v.(*ImportProofResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5215,7 +5443,7 @@ func file_taprootassets_proto_init() {
 			}
 		}
 		file_taprootassets_proto_msgTypes[46].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SendAssetRequest); i {
+			switch v := v.(*AddrEvent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5227,7 +5455,7 @@ func file_taprootassets_proto_init() {
 			}
 		}
 		file_taprootassets_proto_msgTypes[47].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PrevInputAsset); i {
+			switch v := v.(*AddrReceivesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5239,6 +5467,42 @@ func file_taprootassets_proto_init() {
 			}
 		}
 		file_taprootassets_proto_msgTypes[48].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*AddrReceivesResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_taprootassets_proto_msgTypes[49].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SendAssetRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_taprootassets_proto_msgTypes[50].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PrevInputAsset); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_taprootassets_proto_msgTypes[51].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SendAssetResponse); i {
 			case 0:
 				return &v.state

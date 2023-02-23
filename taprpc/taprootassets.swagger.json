@@ -512,7 +512,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/taprpcProofVerifyResponse"
+              "$ref": "#/definitions/taprpcVerifyProofResponse"
             }
           },
           "default": {
@@ -1095,6 +1095,56 @@
         }
       }
     },
+    "taprpcDecodeProofResponse": {
+      "type": "object",
+      "properties": {
+        "decoded_proof": {
+          "$ref": "#/definitions/taprpcDecodedProof"
+        }
+      }
+    },
+    "taprpcDecodedProof": {
+      "type": "object",
+      "properties": {
+        "proof_at_depth": {
+          "type": "string",
+          "format": "int64",
+          "description": "The index depth of the decoded proof, with 0 being the latest proof."
+        },
+        "number_of_proofs": {
+          "type": "string",
+          "format": "int64",
+          "description": "The total number of proofs contained in the raw proof."
+        },
+        "asset": {
+          "$ref": "#/definitions/taprpcAsset",
+          "description": "The asset referenced in the proof."
+        },
+        "tx_merkle_proof": {
+          "type": "string",
+          "format": "byte",
+          "description": "The merkle proof for AnchorTx used to prove its\ninclusion within BlockHeader."
+        },
+        "inclusion_proof": {
+          "type": "string",
+          "format": "byte",
+          "description": "The TaprootProof proving the new inclusion of the\nresulting asset within AnchorTx."
+        },
+        "exclusion_proofs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "byte"
+          },
+          "description": "The set of TaprootProofs proving the exclusion of\nthe resulting asset from all other Taproot outputs within AnchorTx."
+        },
+        "split_root_proof": {
+          "type": "string",
+          "format": "byte",
+          "description": "An optional TaprootProof needed if this asset is\nthe result of a split. SplitRootProof proves inclusion of the root\nasset of the split."
+        }
+      }
+    },
     "taprpcExecuteSendStateEvent": {
       "type": "object",
       "properties": {
@@ -1415,14 +1465,6 @@
         }
       }
     },
-    "taprpcProofVerifyResponse": {
-      "type": "object",
-      "properties": {
-        "valid": {
-          "type": "boolean"
-        }
-      }
-    },
     "taprpcQueryAddrResponse": {
       "type": "object",
       "properties": {
@@ -1606,6 +1648,17 @@
         "num_passive_assets": {
           "type": "integer",
           "format": "int64"
+        }
+      }
+    },
+    "taprpcVerifyProofResponse": {
+      "type": "object",
+      "properties": {
+        "valid": {
+          "type": "boolean"
+        },
+        "decoded_proof": {
+          "$ref": "#/definitions/taprpcDecodedProof"
         }
       }
     }
