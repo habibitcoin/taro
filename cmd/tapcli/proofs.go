@@ -20,6 +20,7 @@ var proofCommands = []cli.Command{
 		Category:  "Proofs",
 		Subcommands: []cli.Command{
 			verifyProofCommand,
+			decodeProofCommand,
 			exportProofCommand,
 			importProofCommand,
 		},
@@ -28,6 +29,9 @@ var proofCommands = []cli.Command{
 
 const (
 	proofPathName = "proof_file"
+
+	proofAtDepthName      = "proof_at_depth"
+	withPrevWitnessesName = "latest_proof"
 )
 
 var verifyProofCommand = cli.Command{
@@ -63,6 +67,62 @@ func verifyProof(ctx *cli.Context) error {
 	resp, err := client.VerifyProof(ctxc, &taprpc.ProofFile{
 		RawProof: rawFile,
 	})
+	if err != nil {
+		return fmt.Errorf("unable to verify file: %w", err)
+	}
+
+	printRespJSON(resp)
+	return nil
+}
+
+var decodeProofCommand = cli.Command{
+	Name:        "decode",
+	ShortName:   "d",
+	Description: "decode a taro proof",
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name: proofPathName,
+			Usage: "the path to the proof file on disk; use the " +
+				"dash character (-) to read from stdin instead",
+		},
+		cli.Int64Flag{
+			Name:  proofAtDepthName,
+			Value: 0,
+			Usage: "the index depth of the decoded proof to fetch " +
+				"with 0 being the latest proof",
+		},
+		cli.BoolFlag{
+			Name:  withPrevWitnessesName,
+			Usage: "if true, previous witnesses will be returned",
+		},
+	},
+	Action: decodeProof,
+}
+
+func decodeProof(ctx *cli.Context) error {
+	ctxc := getContext()
+	client, cleanUp := getClient(ctx)
+	defer cleanUp()
+
+	switch {
+	case !ctx.IsSet(proofPathName):
+		_ = cli.ShowCommandHelp(ctx, "decode")
+		return nil
+	}
+
+	filePath := lncfg.CleanAndExpandPath(ctx.String(proofPathName))
+	rawFile, err := readFile(filePath)
+	if err != nil {
+		return fmt.Errorf("unable to read proof file: %w", err)
+	}
+
+	req := &tarorpc.DecodeProofRequest{
+		RawProof:          rawFile,
+		ProofAtDepth:      ctx.Int64(proofAtDepthName),
+		WithPrevWitnesses: ctx.Bool(withPrevWitnessesName),
+	}
+
+	resp, err := client.DecodeProof(ctxc, req)
 	if err != nil {
 		return fmt.Errorf("unable to verify file: %w", err)
 	}
