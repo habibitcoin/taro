@@ -440,7 +440,7 @@ func marshalChainAsset(a *tarodb.ChainAsset, withWitness bool) (*tarorpc.Asset,
 	rpcAsset.ChainAnchor = &tarorpc.AnchorInfo{
 		AnchorTx:        anchorTxBytes,
 		AnchorTxid:      a.AnchorTxid.String(),
-		AnchorBlockHash: a.AnchorBlockHash[:],
+		AnchorBlockHash: a.AnchorBlockHash.String(),
 		AnchorOutpoint:  a.AnchorOutpoint.String(),
 		InternalKey:     a.AnchorInternalKey.SerializeCompressed(),
 	}
