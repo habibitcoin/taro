@@ -389,6 +389,39 @@
         ]
       }
     },
+    "/v1/taro/proofs/decode": {
+      "post": {
+        "summary": "tarocli: `proofs decode`\nDecodeProof attempts to decode a given proof file into human readable\nformat.",
+        "operationId": "Taro_DecodeProof",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tarorpcDecodeProofResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tarorpcDecodeProofRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Taro"
+        ]
+      }
+    },
     "/v1/taro/proofs/export": {
       "post": {
         "summary": "tarocli: `proofs export`\nExportProof exports the latest raw proof file anchored at the specified\nscript_key.",
@@ -463,7 +496,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/tarorpcProofVerifyResponse"
+              "$ref": "#/definitions/tarorpcVerifyProofResponse"
             }
           },
           "default": {
@@ -1047,6 +1080,75 @@
         }
       }
     },
+    "tarorpcDecodeProofRequest": {
+      "type": "object",
+      "properties": {
+        "raw_proof": {
+          "type": "string",
+          "format": "byte",
+          "description": "The raw proof in bytes to decode, which may contain multiple proofs."
+        },
+        "proof_at_depth": {
+          "type": "string",
+          "format": "int64",
+          "description": "The index depth of the decoded proof, with 0 being the latest proof."
+        },
+        "with_prev_witnesses": {
+          "type": "boolean",
+          "description": "An option to include previous witnesses in decoding."
+        }
+      }
+    },
+    "tarorpcDecodeProofResponse": {
+      "type": "object",
+      "properties": {
+        "decoded_proof": {
+          "$ref": "#/definitions/tarorpcDecodedProof"
+        }
+      }
+    },
+    "tarorpcDecodedProof": {
+      "type": "object",
+      "properties": {
+        "proof_at_depth": {
+          "type": "string",
+          "format": "int64",
+          "description": "The index depth of the decoded proof, with 0 being the latest proof."
+        },
+        "number_of_proofs": {
+          "type": "string",
+          "format": "int64",
+          "description": "The total number of proofs contained in the raw proof."
+        },
+        "asset": {
+          "$ref": "#/definitions/tarorpcAsset",
+          "description": "The asset referenced in the proof."
+        },
+        "tx_merkle_proof": {
+          "type": "string",
+          "format": "byte",
+          "description": "The merkle proof for AnchorTx used to prove its\ninclusion within BlockHeader."
+        },
+        "inclusion_proof": {
+          "type": "string",
+          "format": "byte",
+          "description": "The TaprootProof proving the new inclusion of the\nresulting asset within AnchorTx."
+        },
+        "exclusion_proofs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "byte"
+          },
+          "description": "The set of TaprootProofs proving the exclusion of\nthe resulting asset from all other Taproot outputs within AnchorTx."
+        },
+        "split_root_proof": {
+          "type": "string",
+          "format": "byte",
+          "description": "An optional TaprootProof needed if this asset is\nthe result of a split. SplitRootProof proves inclusion of the root\nasset of the split."
+        }
+      }
+    },
     "tarorpcExecuteSendStateEvent": {
       "type": "object",
       "properties": {
@@ -1384,14 +1486,6 @@
         }
       }
     },
-    "tarorpcProofVerifyResponse": {
-      "type": "object",
-      "properties": {
-        "valid": {
-          "type": "boolean"
-        }
-      }
-    },
     "tarorpcQueryAddrResponse": {
       "type": "object",
       "properties": {
@@ -1525,6 +1619,17 @@
           "items": {
             "$ref": "#/definitions/tarorpcAssetOutput"
           }
+        }
+      }
+    },
+    "tarorpcVerifyProofResponse": {
+      "type": "object",
+      "properties": {
+        "valid": {
+          "type": "boolean"
+        },
+        "decoded_proof": {
+          "$ref": "#/definitions/tarorpcDecodedProof"
         }
       }
     }
