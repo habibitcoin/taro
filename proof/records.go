@@ -6,6 +6,7 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightninglabs/taro/asset"
+	"github.com/lightninglabs/taro/mssmt"
 	"github.com/lightningnetwork/lnd/tlv"
 )
 
@@ -18,7 +19,8 @@ const (
 	InclusionProofType   tlv.Type = 5
 	ExclusionProofsType  tlv.Type = 6
 	SplitRootProofType   tlv.Type = 7
-	AdditionalInputsType tlv.Type = 8
+	MetaRevealType                = 8
+	AdditionalInputsType tlv.Type = 9
 
 	TaprootProofOutputIndexType     tlv.Type = 0
 	TaprootProofInternalKeyType     tlv.Type = 1
@@ -33,6 +35,16 @@ const (
 	TapscriptProofTapPreimage1 tlv.Type = 0
 	TapscriptProofTapPreimage2 tlv.Type = 1
 	TapscriptProofBIP86        tlv.Type = 2
+
+	AssetProofVersionType tlv.Type = 0
+	AssetProofAssetIDType tlv.Type = 1
+	AssetProofType        tlv.Type = 2
+
+	TaroProofVersionType tlv.Type = 0
+	TaroProofType        tlv.Type = 1
+
+	MetaRevealEncodingType tlv.Type = 0
+	MetaRevealDataType     tlv.Type = 1
 )
 
 func PrevOutRecord(prevOut *wire.OutPoint) tlv.Record {
@@ -229,4 +241,76 @@ func TapscriptProofBIP86Record(bip86 *bool) tlv.Record {
 	return tlv.MakeStaticRecord(
 		TapscriptProofBIP86, bip86, 1, BoolEncoder, BoolDecoder,
 	)
+}
+
+func AssetProofVersionRecord(version *asset.Version) tlv.Record {
+	return tlv.MakeStaticRecord(
+		AssetProofVersionType, version, 1, asset.VersionEncoder,
+		asset.VersionDecoder,
+	)
+}
+
+func AssetProofAssetIDRecord(assetID *[32]byte) tlv.Record {
+	return tlv.MakePrimitiveRecord(AssetProofAssetIDType, assetID)
+}
+
+func AssetProofRecord(proof *mssmt.Proof) tlv.Record {
+	sizeFunc := func() uint64 {
+		var buf bytes.Buffer
+		if err := proof.Compress().Encode(&buf); err != nil {
+			panic(err)
+		}
+		return uint64(len(buf.Bytes()))
+	}
+	return tlv.MakeDynamicRecord(
+		AssetProofType, proof, sizeFunc, TreeProofEncoder,
+		TreeProofDecoder,
+	)
+}
+
+func TaroProofVersionRecord(version *asset.Version) tlv.Record {
+	return tlv.MakeStaticRecord(
+		TaroProofVersionType, version, 1, asset.VersionEncoder,
+		asset.VersionDecoder,
+	)
+}
+
+func TaroProofRecord(proof *mssmt.Proof) tlv.Record {
+	sizeFunc := func() uint64 {
+		var buf bytes.Buffer
+		if err := proof.Compress().Encode(&buf); err != nil {
+			panic(err)
+		}
+		return uint64(len(buf.Bytes()))
+	}
+	return tlv.MakeDynamicRecord(
+		TaroProofType, proof, sizeFunc, TreeProofEncoder,
+		TreeProofDecoder,
+	)
+}
+
+func MetaRevealRecord(reveal **MetaReveal) tlv.Record {
+	sizeFunc := func() uint64 {
+		var buf bytes.Buffer
+		err := MetaRevealEncoder(&buf, reveal, &[8]byte{})
+		if err != nil {
+			panic(err)
+		}
+		return uint64(len(buf.Bytes()))
+	}
+	return tlv.MakeDynamicRecord(
+		MetaRevealType, reveal, sizeFunc, MetaRevealEncoder,
+		MetaRevealDecoder,
+	)
+}
+
+func MetaRevealTypeRecord(metaType *MetaType) tlv.Record {
+	return tlv.MakeStaticRecord(
+		MetaRevealEncodingType, metaType, 1, MetaTypeEncoder,
+		MetaTypeDecoder,
+	)
+}
+
+func MetaRevealDataRecord(data *[]byte) tlv.Record {
+	return tlv.MakePrimitiveRecord(MetaRevealDataType, data)
 }

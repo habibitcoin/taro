@@ -6,6 +6,7 @@ import (
 
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightninglabs/taro/asset"
+	"github.com/lightninglabs/taro/mssmt"
 	"github.com/lightningnetwork/lnd/tlv"
 )
 
@@ -335,4 +336,76 @@ func BoolDecoder(r io.Reader, val any, buf *[8]byte, l uint64) error {
 		return nil
 	}
 	return tlv.NewTypeForEncodingErr(val, "bool")
+}
+
+func MetaRevealEncoder(w io.Writer, val any, buf *[8]byte) error {
+	if t, ok := val.(**MetaReveal); ok {
+		return (*t).Encode(w)
+	}
+	return tlv.NewTypeForEncodingErr(val, "*MetaReveal")
+}
+
+func MetaRevealDecoder(r io.Reader, val any, buf *[8]byte, l uint64) error {
+	if typ, ok := val.(**MetaReveal); ok {
+		var revealBytes []byte
+		if err := tlv.DVarBytes(r, &revealBytes, buf, l); err != nil {
+			return err
+		}
+		var reveal MetaReveal
+		err := reveal.Decode(bytes.NewReader(revealBytes))
+		if err != nil {
+			return err
+		}
+		*typ = &reveal
+		return nil
+	}
+	return tlv.NewTypeForEncodingErr(val, "*MetaReveal")
+}
+
+func MetaTypeEncoder(w io.Writer, val any, buf *[8]byte) error {
+	if t, ok := val.(*MetaType); ok {
+		return tlv.EUint8T(w, uint8(*t), buf)
+	}
+	return tlv.NewTypeForEncodingErr(val, "MetaType")
+}
+
+func MetaTypeDecoder(r io.Reader, val any, buf *[8]byte, l uint64) error {
+	if typ, ok := val.(*MetaType); ok {
+		var metaType uint8
+		if err := tlv.DUint8(r, &metaType, buf, l); err != nil {
+			return err
+		}
+		*typ = MetaType(metaType)
+		return nil
+	}
+	return tlv.NewTypeForEncodingErr(val, "MetaType")
+}
+
+func TreeProofEncoder(w io.Writer, val any, buf *[8]byte) error {
+	if t, ok := val.(*mssmt.Proof); ok {
+		return t.Compress().Encode(w)
+	}
+	return tlv.NewTypeForEncodingErr(val, "mssmt.Proof")
+}
+
+func TreeProofDecoder(r io.Reader, val any, buf *[8]byte, l uint64) error {
+	if typ, ok := val.(*mssmt.Proof); ok {
+		var proofBytes []byte
+		if err := tlv.DVarBytes(r, &proofBytes, buf, l); err != nil {
+			return err
+		}
+		var proof mssmt.CompressedProof
+		if err := proof.Decode(bytes.NewReader(proofBytes)); err != nil {
+			return err
+		}
+
+		fullProof, err := proof.Decompress()
+		if err != nil {
+			return err
+		}
+
+		*typ = *fullProof
+		return nil
+	}
+	return tlv.NewTypeForEncodingErr(val, "mssmt.Proof")
 }
