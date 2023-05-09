@@ -154,7 +154,7 @@ var (
 // ChainConfig houses the configuration options that govern which chain/network
 // we operate on.
 type ChainConfig struct {
-	Network string `long:"network" description:"network to run on" choice:"regtest" choice:"testnet" choice:"simnet"`
+	Network string `long:"network" description:"network to run on" choice:"regtest" choice:"testnet" choice:"mainnet" choice:"simnet"`
 
 	SigNetChallenge string `long:"signetchallenge" description:"Connect to a custom signet network defined by this challenge instead of using the global default signet test network -- Can be specified multiple times"`
 }
@@ -483,6 +483,8 @@ func ValidateConfig(cfg Config, interceptor signal.Interceptor) (*Config,
 	// network flags passed; assign active network params
 	// while we're at it.
 	switch cfg.ChainConf.Network {
+	case "mainnet":
+		cfg.ActiveNetParams = chaincfg.MainNetParams
 	case "testnet":
 		cfg.ActiveNetParams = chaincfg.TestNet3Params
 	case "regtest":
