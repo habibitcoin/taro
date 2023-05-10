@@ -66,7 +66,11 @@ type TaroClient interface {
 	// tarocli: `proofs verify`
 	//VerifyProof attempts to verify a given proof file that claims to be anchored
 	//at the specified genesis point.
-	VerifyProof(ctx context.Context, in *ProofFile, opts ...grpc.CallOption) (*ProofVerifyResponse, error)
+	VerifyProof(ctx context.Context, in *ProofFile, opts ...grpc.CallOption) (*VerifyProofResponse, error)
+	// tarocli: `proofs decode`
+	//DecodeProof attempts to decode a given proof file into human readable
+	//format.
+	DecodeProof(ctx context.Context, in *DecodeProofRequest, opts ...grpc.CallOption) (*DecodeProofResponse, error)
 	// tarocli: `proofs export`
 	//ExportProof exports the latest raw proof file anchored at the specified
 	//script_key.
@@ -207,9 +211,18 @@ func (c *taroClient) AddrReceives(ctx context.Context, in *AddrReceivesRequest, 
 	return out, nil
 }
 
-func (c *taroClient) VerifyProof(ctx context.Context, in *ProofFile, opts ...grpc.CallOption) (*ProofVerifyResponse, error) {
-	out := new(ProofVerifyResponse)
+func (c *taroClient) VerifyProof(ctx context.Context, in *ProofFile, opts ...grpc.CallOption) (*VerifyProofResponse, error) {
+	out := new(VerifyProofResponse)
 	err := c.cc.Invoke(ctx, "/tarorpc.Taro/VerifyProof", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *taroClient) DecodeProof(ctx context.Context, in *DecodeProofRequest, opts ...grpc.CallOption) (*DecodeProofResponse, error) {
+	out := new(DecodeProofResponse)
+	err := c.cc.Invoke(ctx, "/tarorpc.Taro/DecodeProof", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -336,7 +349,11 @@ type TaroServer interface {
 	// tarocli: `proofs verify`
 	//VerifyProof attempts to verify a given proof file that claims to be anchored
 	//at the specified genesis point.
-	VerifyProof(context.Context, *ProofFile) (*ProofVerifyResponse, error)
+	VerifyProof(context.Context, *ProofFile) (*VerifyProofResponse, error)
+	// tarocli: `proofs decode`
+	//DecodeProof attempts to decode a given proof file into human readable
+	//format.
+	DecodeProof(context.Context, *DecodeProofRequest) (*DecodeProofResponse, error)
 	// tarocli: `proofs export`
 	//ExportProof exports the latest raw proof file anchored at the specified
 	//script_key.
@@ -402,8 +419,11 @@ func (UnimplementedTaroServer) DecodeAddr(context.Context, *DecodeAddrRequest) (
 func (UnimplementedTaroServer) AddrReceives(context.Context, *AddrReceivesRequest) (*AddrReceivesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddrReceives not implemented")
 }
-func (UnimplementedTaroServer) VerifyProof(context.Context, *ProofFile) (*ProofVerifyResponse, error) {
+func (UnimplementedTaroServer) VerifyProof(context.Context, *ProofFile) (*VerifyProofResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyProof not implemented")
+}
+func (UnimplementedTaroServer) DecodeProof(context.Context, *DecodeProofRequest) (*DecodeProofResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DecodeProof not implemented")
 }
 func (UnimplementedTaroServer) ExportProof(context.Context, *ExportProofRequest) (*ProofFile, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExportProof not implemented")
@@ -667,6 +687,24 @@ func _Taro_VerifyProof_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Taro_DecodeProof_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DecodeProofRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaroServer).DecodeProof(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tarorpc.Taro/DecodeProof",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaroServer).DecodeProof(ctx, req.(*DecodeProofRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Taro_ExportProof_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ExportProofRequest)
 	if err := dec(in); err != nil {
@@ -818,6 +856,10 @@ var Taro_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "VerifyProof",
 			Handler:    _Taro_VerifyProof_Handler,
+		},
+		{
+			MethodName: "DecodeProof",
+			Handler:    _Taro_DecodeProof_Handler,
 		},
 		{
 			MethodName: "ExportProof",

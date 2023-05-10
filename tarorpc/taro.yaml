@@ -37,6 +37,10 @@ http:
       post: "/v1/taro/proofs/verify"
       body: "*"
 
+    - selector: tarorpc.Taro.DecodeProof
+      post: "/v1/taro/proofs/decode"
+      body: "*"
+
     - selector: tarorpc.Taro.ExportProof
       post: "/v1/taro/proofs/export"
       body: "*"

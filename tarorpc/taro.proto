@@ -78,7 +78,13 @@ service Taro {
     VerifyProof attempts to verify a given proof file that claims to be anchored
     at the specified genesis point.
     */
-    rpc VerifyProof (ProofFile) returns (ProofVerifyResponse);
+    rpc VerifyProof (ProofFile) returns (VerifyProofResponse);
+
+    /* tarocli: `proofs decode`
+    DecodeProof attempts to decode a given proof file into human readable
+    format.
+    */
+    rpc DecodeProof (DecodeProofRequest) returns (DecodeProofResponse);
 
     /* tarocli: `proofs export`
     ExportProof exports the latest raw proof file anchored at the specified
@@ -213,7 +219,7 @@ message AnchorInfo {
     string anchor_txid = 2;
 
     // The block hash the contains the anchor transaction above.
-    bytes anchor_block_hash = 3;
+    string anchor_block_hash = 3;
 
     // The outpoint (txid:vout) that stores the Taro commitment.
     string anchor_outpoint = 4;
@@ -624,8 +630,52 @@ message ProofFile {
     string genesis_point = 2;
 }
 
-message ProofVerifyResponse {
+message DecodedProof {
+    // The index depth of the decoded proof, with 0 being the latest proof.
+    int64 proof_at_depth = 1;
+
+    // The total number of proofs contained in the raw proof.
+    int64 number_of_proofs = 2;
+
+    // The asset referenced in the proof.
+    Asset asset = 3;
+
+    // The merkle proof for AnchorTx used to prove its
+    // inclusion within BlockHeader.
+    bytes tx_merkle_proof = 4;
+
+    // The TaprootProof proving the new inclusion of the
+    // resulting asset within AnchorTx.
+    bytes inclusion_proof = 5;
+
+    // The set of TaprootProofs proving the exclusion of
+    // the resulting asset from all other Taproot outputs within AnchorTx.
+    repeated bytes exclusion_proofs = 6;
+
+    // An optional TaprootProof needed if this asset is
+    // the result of a split. SplitRootProof proves inclusion of the root
+    // asset of the split.
+    bytes split_root_proof = 7;
+}
+
+message VerifyProofResponse {
     bool valid = 1;
+    DecodedProof decoded_proof = 2;
+}
+
+message DecodeProofRequest {
+    // The raw proof in bytes to decode, which may contain multiple proofs.
+    bytes raw_proof = 1;
+
+    // The index depth of the decoded proof, with 0 being the latest proof.
+    int64 proof_at_depth = 2;
+
+    // An option to include previous witnesses in decoding.
+    bool with_prev_witnesses = 3;
+}
+
+message DecodeProofResponse {
+    DecodedProof decoded_proof = 1;
 }
 
 message ExportProofRequest {

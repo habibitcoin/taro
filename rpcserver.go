@@ -15,6 +15,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
+	"github.com/btcsuite/btcd/wire"
 	"github.com/davecgh/go-spew/spew"
 	proxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lightninglabs/taro/address"
@@ -97,6 +98,10 @@ var (
 			Action: "read",
 		}},
 		"/tarorpc.Taro/VerifyProof": {{
+			Entity: "proofs",
+			Action: "read",
+		}},
+		"/tarorpc.Taro/DecodeProof": {{
 			Entity: "proofs",
 			Action: "read",
 		}},
@@ -447,7 +452,7 @@ func marshalChainAsset(a *tarodb.ChainAsset, withWitness bool) (*tarorpc.Asset,
 	rpcAsset.ChainAnchor = &tarorpc.AnchorInfo{
 		AnchorTx:        anchorTxBytes,
 		AnchorTxid:      a.AnchorTxid.String(),
-		AnchorBlockHash: a.AnchorBlockHash[:],
+		AnchorBlockHash: a.AnchorBlockHash.String(),
 		AnchorOutpoint:  a.AnchorOutpoint.String(),
 		InternalKey:     a.AnchorInternalKey.SerializeCompressed(),
 	}
@@ -949,7 +954,7 @@ func (r *rpcServer) DecodeAddr(_ context.Context,
 // VerifyProof attempts to verify a given proof file that claims to be anchored
 // at the specified genesis point.
 func (r *rpcServer) VerifyProof(ctx context.Context,
-	in *tarorpc.ProofFile) (*tarorpc.ProofVerifyResponse, error) {
+	in *tarorpc.ProofFile) (*tarorpc.VerifyProofResponse, error) {
 
 	if len(in.RawProof) == 0 {
 		return nil, fmt.Errorf("proof file must be specified")
@@ -967,12 +972,126 @@ func (r *rpcServer) VerifyProof(ctx context.Context,
 	)
 	valid := err == nil
 
-	// TODO(roasbeef): also show additional final resting anchor
-	// information, etc?
+	decodedProof, err := marshalProofFile(proofFile, 0, false)
+	if err != nil {
+		return nil, fmt.Errorf("unable to marshal proof: %w", err)
+	}
 
-	// TODO(roasbeef): show the final resting place of the asset?
-	return &tarorpc.ProofVerifyResponse{
-		Valid: valid,
+	return &tarorpc.VerifyProofResponse{
+		Valid:        valid,
+		DecodedProof: decodedProof,
+	}, nil
+}
+
+// DecodeProof attempts to decode a given proof file that claims to be anchored
+// at the specified genesis point.
+func (r *rpcServer) DecodeProof(ctx context.Context,
+	in *tarorpc.DecodeProofRequest) (*tarorpc.DecodeProofResponse, error) {
+
+	if len(in.RawProof) == 0 {
+		return nil, fmt.Errorf("proof file must be specified")
+	}
+
+	var proofFile proof.File
+	if err := proofFile.Decode(bytes.NewReader(in.RawProof)); err != nil {
+		return nil, fmt.Errorf("unable to decode proof file: %w", err)
+	}
+
+	decodedProof, err := marshalProofFile(
+		proofFile,
+		in.ProofAtDepth,
+		in.WithPrevWitnesses,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to marshal proof: %w", err)
+	}
+
+	return &tarorpc.DecodeProofResponse{
+		DecodedProof: decodedProof,
+	}, nil
+}
+
+// marshalProofFile turns a proof file into an RPC DecodedProof.
+func marshalProofFile(proofFile proof.File,
+	index int64, withPrevWitnesses bool) (*tarorpc.DecodedProof, error) {
+
+	var (
+		decodedProof *proof.Proof
+		err          error
+	)
+
+	// Default to latest proof
+	index = int64(proofFile.NumProofs()) - 1 - index
+
+	decodedProof, err = proofFile.ProofAt(uint32(index))
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		finalAsset     = decodedProof.Asset
+		rpcAsset       *tarorpc.Asset
+		anchorOutpoint = wire.OutPoint{
+			Hash:  decodedProof.AnchorTx.TxHash(),
+			Index: decodedProof.InclusionProof.OutputIndex,
+		}
+		txMerkleProof  = decodedProof.TxMerkleProof
+		inclusionProof = decodedProof.InclusionProof
+		splitRootProof = decodedProof.SplitRootProof
+	)
+
+	var txMerkleProofBuf bytes.Buffer
+	if err := txMerkleProof.Encode(&txMerkleProofBuf); err != nil {
+		return nil, fmt.Errorf("unable to encode serialized Bitcoin "+
+			"merkle proof: %w", err)
+	}
+
+	var inclusionProofBuf bytes.Buffer
+	if err := inclusionProof.Encode(&inclusionProofBuf); err != nil {
+		return nil, fmt.Errorf("unable to encode inclusion proof: %w",
+			err)
+	}
+
+	var exclusionProofs [][]byte
+	for _, exclusionProof := range decodedProof.ExclusionProofs {
+		var exclusionProofBuf bytes.Buffer
+		if err := exclusionProof.Encode(&exclusionProofBuf); err != nil {
+			return nil, fmt.Errorf("unable to encode exclusion "+
+				"proofs: %w", err)
+		}
+		exclusionProofBytes := exclusionProofBuf.Bytes()
+
+		exclusionProofs = append(exclusionProofs, exclusionProofBytes)
+	}
+
+	var splitRootProofBuf bytes.Buffer
+	if splitRootProof != nil {
+		if err := splitRootProof.Encode(&splitRootProofBuf); err != nil {
+			return nil, fmt.Errorf("unable to encode split root proof: %w",
+				err)
+		}
+	}
+
+	rpcAsset, err = marshalChainAsset(&tarodb.ChainAsset{
+		Asset:             &finalAsset,
+		AnchorTx:          &decodedProof.AnchorTx,
+		AnchorTxid:        decodedProof.AnchorTx.TxHash(),
+		AnchorBlockHash:   decodedProof.BlockHeader.BlockHash(),
+		AnchorOutpoint:    anchorOutpoint,
+		AnchorInternalKey: decodedProof.InclusionProof.InternalKey,
+	}, withPrevWitnesses)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tarorpc.DecodedProof{
+		ProofAtDepth:    int64(index),
+		NumberOfProofs:  int64(proofFile.NumProofs()),
+		Asset:           rpcAsset,
+		TxMerkleProof:   txMerkleProofBuf.Bytes(),
+		InclusionProof:  inclusionProofBuf.Bytes(),
+		ExclusionProofs: exclusionProofs,
+		SplitRootProof:  splitRootProofBuf.Bytes(),
 	}, nil
 }
 
