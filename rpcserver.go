@@ -545,7 +545,7 @@ func (r *rpcServer) marshalChainAsset(ctx context.Context, a *tapdb.ChainAsset,
 		anchorTxBytes = anchorTxBuf.Bytes()
 	}
 
-	rpcAsset.ChainAnchor = &tarorpc.AnchorInfo{
+	rpcAsset.ChainAnchor = &taprpc.AnchorInfo{
 		AnchorTx:        anchorTxBytes,
 		AnchorTxid:      a.AnchorTxid.String(),
 		AnchorBlockHash: a.AnchorBlockHash.String(),
@@ -1042,7 +1042,7 @@ func (r *rpcServer) DecodeAddr(_ context.Context,
 // VerifyProof attempts to verify a given proof file that claims to be anchored
 // at the specified genesis point.
 func (r *rpcServer) VerifyProof(ctx context.Context,
-	in *tarorpc.ProofFile) (*tarorpc.VerifyProofResponse, error) {
+	in *taprpc.ProofFile) (*taprpc.VerifyProofResponse, error) {
 
 	if len(in.RawProof) == 0 {
 		return nil, fmt.Errorf("proof file must be specified")
@@ -1060,12 +1060,12 @@ func (r *rpcServer) VerifyProof(ctx context.Context,
 	)
 	valid := err == nil
 
-	decodedProof, err := marshalProofFile(proofFile, 0, false)
+	decodedProof, err := r.marshalProofFile(ctx, proofFile, 0, false)
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal proof: %w", err)
 	}
 
-	return &tarorpc.VerifyProofResponse{
+	return &taprpc.VerifyProofResponse{
 		Valid:        valid,
 		DecodedProof: decodedProof,
 	}, nil
@@ -1074,7 +1074,7 @@ func (r *rpcServer) VerifyProof(ctx context.Context,
 // DecodeProof attempts to decode a given proof file that claims to be anchored
 // at the specified genesis point.
 func (r *rpcServer) DecodeProof(ctx context.Context,
-	in *tarorpc.DecodeProofRequest) (*tarorpc.DecodeProofResponse, error) {
+	in *taprpc.DecodeProofRequest) (*taprpc.DecodeProofResponse, error) {
 
 	if len(in.RawProof) == 0 {
 		return nil, fmt.Errorf("proof file must be specified")
@@ -1085,7 +1085,8 @@ func (r *rpcServer) DecodeProof(ctx context.Context,
 		return nil, fmt.Errorf("unable to decode proof file: %w", err)
 	}
 
-	decodedProof, err := marshalProofFile(
+	decodedProof, err := r.marshalProofFile(
+		ctx,
 		proofFile,
 		in.ProofAtDepth,
 		in.WithPrevWitnesses,
@@ -1094,14 +1095,14 @@ func (r *rpcServer) DecodeProof(ctx context.Context,
 		return nil, fmt.Errorf("unable to marshal proof: %w", err)
 	}
 
-	return &tarorpc.DecodeProofResponse{
+	return &taprpc.DecodeProofResponse{
 		DecodedProof: decodedProof,
 	}, nil
 }
 
 // marshalProofFile turns a proof file into an RPC DecodedProof.
-func marshalProofFile(proofFile proof.File,
-	index int64, withPrevWitnesses bool) (*tarorpc.DecodedProof, error) {
+func (r *rpcServer) marshalProofFile(ctx context.Context, proofFile proof.File,
+	index int64, withPrevWitnesses bool) (*taprpc.DecodedProof, error) {
 
 	var (
 		decodedProof *proof.Proof
@@ -1118,7 +1119,7 @@ func marshalProofFile(proofFile proof.File,
 
 	var (
 		finalAsset     = decodedProof.Asset
-		rpcAsset       *tarorpc.Asset
+		rpcAsset       *taprpc.Asset
 		anchorOutpoint = wire.OutPoint{
 			Hash:  decodedProof.AnchorTx.TxHash(),
 			Index: decodedProof.InclusionProof.OutputIndex,
@@ -1160,7 +1161,7 @@ func marshalProofFile(proofFile proof.File,
 		}
 	}
 
-	rpcAsset, err = marshalChainAsset(&tarodb.ChainAsset{
+	rpcAsset, err = r.marshalChainAsset(ctx, &tapdb.ChainAsset{
 		Asset:             &finalAsset,
 		AnchorTx:          &decodedProof.AnchorTx,
 		AnchorTxid:        decodedProof.AnchorTx.TxHash(),
@@ -1172,7 +1173,7 @@ func marshalProofFile(proofFile proof.File,
 		return nil, err
 	}
 
-	return &tarorpc.DecodedProof{
+	return &taprpc.DecodedProof{
 		ProofAtDepth:    int64(index),
 		NumberOfProofs:  int64(proofFile.NumProofs()),
 		Asset:           rpcAsset,

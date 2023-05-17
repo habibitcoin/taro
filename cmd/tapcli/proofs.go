@@ -116,7 +116,7 @@ func decodeProof(ctx *cli.Context) error {
 		return fmt.Errorf("unable to read proof file: %w", err)
 	}
 
-	req := &tarorpc.DecodeProofRequest{
+	req := &taprpc.DecodeProofRequest{
 		RawProof:          rawFile,
 		ProofAtDepth:      ctx.Int64(proofAtDepthName),
 		WithPrevWitnesses: ctx.Bool(withPrevWitnessesName),
