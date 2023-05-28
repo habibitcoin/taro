@@ -78,7 +78,7 @@ func verifyProof(ctx *cli.Context) error {
 var decodeProofCommand = cli.Command{
 	Name:        "decode",
 	ShortName:   "d",
-	Description: "decode a taro proof",
+	Description: "decode a Taproot Asset proof",
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name: proofPathName,
