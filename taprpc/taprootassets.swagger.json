@@ -438,6 +438,39 @@
         ]
       }
     },
+    "/v1/taproot-assets/proofs/decode": {
+      "post": {
+        "summary": "tarocli: `proofs decode`\nDecodeProof attempts to decode a given proof file into human readable\nformat.",
+        "operationId": "TaprootAssets_DecodeProof",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/taprpcDecodeProofResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/taprpcDecodeProofRequest"
+            }
+          }
+        ],
+        "tags": [
+          "TaprootAssets"
+        ]
+      }
+    },
     "/v1/taproot-assets/proofs/export": {
       "post": {
         "summary": "tapcli: `proofs export`\nExportProof exports the latest raw proof file anchored at the specified\nscript_key.",
@@ -1092,6 +1125,25 @@
       "properties": {
         "addr": {
           "type": "string"
+        }
+      }
+    },
+    "taprpcDecodeProofRequest": {
+      "type": "object",
+      "properties": {
+        "raw_proof": {
+          "type": "string",
+          "format": "byte",
+          "description": "The raw proof in bytes to decode, which may contain multiple proofs."
+        },
+        "proof_at_depth": {
+          "type": "string",
+          "format": "int64",
+          "description": "The index depth of the decoded proof, with 0 being the latest proof."
+        },
+        "with_prev_witnesses": {
+          "type": "boolean",
+          "description": "An option to include previous witnesses in decoding."
         }
       }
     },
