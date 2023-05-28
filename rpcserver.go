@@ -546,11 +546,13 @@ func (r *rpcServer) marshalChainAsset(ctx context.Context, a *tapdb.ChainAsset,
 	}
 
 	rpcAsset.ChainAnchor = &taprpc.AnchorInfo{
-		AnchorTx:        anchorTxBytes,
-		AnchorTxid:      a.AnchorTxid.String(),
-		AnchorBlockHash: a.AnchorBlockHash.String(),
-		AnchorOutpoint:  a.AnchorOutpoint.String(),
-		InternalKey:     a.AnchorInternalKey.SerializeCompressed(),
+		AnchorTx:         anchorTxBytes,
+		AnchorTxid:       a.AnchorTxid.String(),
+		AnchorBlockHash:  a.AnchorBlockHash.String(),
+		AnchorOutpoint:   a.AnchorOutpoint.String(),
+		InternalKey:      a.AnchorInternalKey.SerializeCompressed(),
+		MerkleRoot:       a.AnchorMerkleRoot,
+		TapscriptSibling: a.AnchorTapscriptSibling,
 	}
 
 	return rpcAsset, nil
