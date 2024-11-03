@@ -886,9 +886,9 @@ func (a *AssetStore) constraintsToDbFilter(
 		// Check if there's exactly one PrevID and set the filters accordingly.
 		if len(query.PrevIDs) == 1 {
 			prevID := query.PrevIDs[0]
-			encodedOutpoint, err := encodeOutpoint(prevID.OutPoint)
+			_, err := encodeOutpoint(prevID.OutPoint)
 			if err == nil {
-				assetFilter.AnchorPoint = encodedOutpoint
+				//assetFilter.AnchorPoint = encodedOutpoint
 				assetFilter.TweakedScriptKey = prevID.ScriptKey.CopyBytes()
 			}
 			// If there's an error, we simply skip setting the fields
