@@ -883,6 +883,18 @@ func (a *AssetStore) constraintsToDbFilter(
 		assetFilter.AssetIDFilter = assetIDBytes
 		assetFilter.KeyGroupFilter = groupKeyBytes
 
+		// Check if there's exactly one PrevID and set the filters accordingly.
+		if len(query.PrevIDs) == 1 {
+			prevID := query.PrevIDs[0]
+			encodedOutpoint, err := encodeOutpoint(prevID.OutPoint)
+			if err == nil {
+				assetFilter.AnchorPoint = encodedOutpoint
+				assetFilter.TweakedScriptKey = prevID.ScriptKey.CopyBytes()
+			}
+			// If there's an error, we simply skip setting the fields
+			// TODO, maybe log error or return it?
+		}
+
 		// TODO(roasbeef): only want to allow asset ID or other and not
 		// both?
 

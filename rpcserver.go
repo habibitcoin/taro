@@ -2049,9 +2049,28 @@ func (r *rpcServer) FundVirtualPsbt(ctx context.Context,
 
 	case req.GetRaw() != nil:
 		raw := req.GetRaw()
+		prevIDs := []*asset.PrevID{}
 		if len(raw.Inputs) > 0 {
-			return nil, fmt.Errorf("template inputs not yet " +
-				"supported")
+			for _, input := range raw.Inputs {
+				// Create a new chainhash.Hash and set its bytes
+				var hash chainhash.Hash
+				if err := hash.SetBytes(input.Outpoint.Txid); err != nil {
+					return nil, fmt.Errorf("invalid Txid length: %w", err)
+				}
+				// Decode the input into an asset.PrevID
+				prevID := &asset.PrevID{
+					OutPoint: wire.OutPoint{
+						Hash:  hash,
+						Index: input.Outpoint.OutputIndex,
+					},
+					ID:        asset.ID(input.Id), // Assuming asset.ID is compatible with []byte
+					ScriptKey: asset.SerializedKey(input.ScriptKey),
+				}
+				prevIDs = append(prevIDs, prevID)
+			}
+		}
+		if len(raw.Inputs) > 1 {
+			return nil, fmt.Errorf("only one input supported")
 		}
 		if len(raw.Recipients) > 1 {
 			return nil, fmt.Errorf("only one recipient supported")
@@ -2073,8 +2092,9 @@ func (r *rpcServer) FundVirtualPsbt(ctx context.Context,
 			return nil, fmt.Errorf("no recipients specified")
 		}
 
+		//TODO: should accept some kind of inputs list from the raw.Inputs object
 		fundedVPkt, err = r.cfg.AssetWallet.FundAddressSend(
-			ctx, coinSelectType, addr,
+			ctx, coinSelectType, prevIDs, addr,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error funding address send: "+

@@ -69,6 +69,7 @@ type Wallet interface {
 	// selected assets.
 	FundAddressSend(ctx context.Context,
 		coinSelectType tapsend.CoinSelectType,
+		prevIds []*asset.PrevID,
 		receiverAddrs ...*address.Tap) (*FundedVPacket, error)
 
 	// FundPacket funds a virtual transaction, selecting assets to spend
@@ -236,6 +237,7 @@ type FundedVPacket struct {
 // NOTE: This is part of the Wallet interface.
 func (f *AssetWallet) FundAddressSend(ctx context.Context,
 	coinSelectType tapsend.CoinSelectType,
+	prevIds []*asset.PrevID,
 	receiverAddrs ...*address.Tap) (*FundedVPacket, error) {
 
 	// We start by creating a new virtual transaction that will be used to
@@ -251,6 +253,11 @@ func (f *AssetWallet) FundAddressSend(ctx context.Context,
 	fundDesc, err := tapsend.DescribeAddrs(receiverAddrs)
 	if err != nil {
 		return nil, fmt.Errorf("unable to describe recipients: %w", err)
+	}
+
+	// We need to constrain the prevIDs if they are provided.
+	if len(prevIds) > 0 {
+		fundDesc.PrevIDs = prevIds
 	}
 
 	fundDesc.CoinSelectType = coinSelectType
@@ -371,6 +378,7 @@ func (f *AssetWallet) FundPacket(ctx context.Context,
 		AssetSpecifier: fundDesc.AssetSpecifier,
 		MinAmt:         fundDesc.Amount,
 		CoinSelectType: fundDesc.CoinSelectType,
+		PrevIDs:        fundDesc.PrevIDs,
 	}
 
 	anchorVersion, err := tappsbt.CommitmentVersion(vPkt.Version)
