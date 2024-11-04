@@ -1072,7 +1072,7 @@ func (p *ChainPorter) stateStep(currentPkg sendPackage) (*sendPackage, error) {
 
 		//readableFeeRate := feeRate.FeePerKVByte().String()
 		//log.Infof("Sending with fee rate: %v", readableFeeRate)
-		const MinFeePerKVByte = 2000 // Minimum fee rate in sat/kvB
+		const MinFeePerKVByte = 500 // Minimum fee rate turns into 2 sat/vByte
 		minFeeRate := chainfee.NewSatPerKWeight(btcutil.Amount(MinFeePerKVByte), lntypes.WeightUnit(1000))
 
 		log.Infof("Sending with fee rate: %v and minimum fee rate: %v", feeRate.FeePerKVByte().String(), minFeeRate.FeePerKVByte().String())
