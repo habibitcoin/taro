@@ -677,7 +677,9 @@ func checkFeeRateSanity(rpcFeeRate uint32) (*chainfee.SatPerKWeight, error) {
 	switch {
 	// No manual fee rate was set, which is the default.
 	case rpcFeeRate == 0:
-		return nil, nil
+		defaultRate := fn.Ptr(chainfee.SatPerKWeight(feeFloor + 5))
+		fmt.Printf("using default fee rate: %d\n", defaultRate)
+		return defaultRate, nil
 
 	// A manual fee was set but is below a reasonable floor.
 	case rpcFeeRate < feeFloor:
